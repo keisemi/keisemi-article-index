@@ -11,6 +11,33 @@
     content="『経済セミナー』創刊号以降の記事を検索・閲覧できる全記事目録です。"
   >
 
+  <meta property="og:type" content="website">
+
+<meta
+  property="og:title"
+  content="『経済セミナー』全記事データベース"
+>
+
+<meta
+  property="og:description"
+  content="『経済セミナー』創刊号以降の記事を検索・閲覧できる全記事目録です。"
+>
+
+<meta
+  property="og:url"
+  content="https://keisemi.github.io/keisemi-article-index/"
+>
+
+<meta
+  property="og:image"
+  content="https://keisemi.github.io/keisemi-article-index/assets/ogp.png"
+>
+
+<meta
+  name="twitter:image"
+  content="https://keisemi.github.io/keisemi-article-index/assets/ogp.png"
+>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -91,7 +118,7 @@
               株式会社日本評論社
             </a>
           </p>
-                    <p class="magazine-publisher">
+          <p class="magazine-publisher">
             <a
               href="https://github.com/keisemi/keisemi-article-index"
               target="_blank"
@@ -288,13 +315,82 @@
 
             <thead>
               <tr>
-                <th>年月号</th>
-                <th>通巻番号</th>
-                <th>記事タイトル</th>
-                <th>著者名</th>
-                <th>特集・連載等タイトル</th>
-                <th>種別</th>
-                <th>頁</th>
+                <th>
+                  <div class="sortable-heading">
+                    <span>年月号</span>
+                    <select class="sort-select" data-sort-key="date" aria-label="年月号の並び順">
+                      <option value="">↕</option>
+                      <option value="asc">↑ 昇順</option>
+                      <option value="desc">↓ 降順</option>
+                    </select>
+                  </div>
+                </th>
+
+                <th>
+                  <div class="sortable-heading">
+                    <span>通巻番号</span>
+                    <select class="sort-select" data-sort-key="issue" aria-label="通巻番号の並び順">
+                      <option value="">↕</option>
+                      <option value="asc">↑ 昇順</option>
+                      <option value="desc">↓ 降順</option>
+                    </select>
+                  </div>
+                </th>
+
+                <th>
+                  <div class="sortable-heading">
+                    <span>記事タイトル</span>
+                    <select class="sort-select" data-sort-key="title" aria-label="記事タイトルの並び順">
+                      <option value="">↕</option>
+                      <option value="asc">↑ 昇順</option>
+                      <option value="desc">↓ 降順</option>
+                    </select>
+                  </div>
+                </th>
+
+                <th>
+                  <div class="sortable-heading">
+                    <span>著者名</span>
+                    <select class="sort-select" data-sort-key="authors" aria-label="著者名の並び順">
+                      <option value="">↕</option>
+                      <option value="asc">↑ 昇順</option>
+                      <option value="desc">↓ 降順</option>
+                    </select>
+                  </div>
+                </th>
+
+                <th>
+                  <div class="sortable-heading">
+                    <span>特集・連載等タイトル</span>
+                    <select class="sort-select" data-sort-key="series" aria-label="特集・連載等タイトルの並び順">
+                      <option value="">↕</option>
+                      <option value="asc">↑ 昇順</option>
+                      <option value="desc">↓ 降順</option>
+                    </select>
+                  </div>
+                </th>
+
+                <th>
+                  <div class="sortable-heading">
+                    <span>種別</span>
+                    <select class="sort-select" data-sort-key="type" aria-label="種別の並び順">
+                      <option value="">↕</option>
+                      <option value="asc">↑ 昇順</option>
+                      <option value="desc">↓ 降順</option>
+                    </select>
+                  </div>
+                </th>
+
+                <th>
+                  <div class="sortable-heading">
+                    <span>頁</span>
+                    <select class="sort-select" data-sort-key="pages" aria-label="頁の並び順">
+                      <option value="">↕</option>
+                      <option value="asc">↑ 昇順</option>
+                      <option value="desc">↓ 降順</option>
+                    </select>
+                  </div>
+                </th>
               </tr>
             </thead>
 

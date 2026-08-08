@@ -1379,3 +1379,58 @@ select {
   }
 
 }
+
+
+/* ==================================================
+   Article-table sorting controls
+================================================== */
+
+.sortable-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 8px;
+}
+
+.sortable-heading > span {
+  flex: 0 0 auto;
+}
+
+.sort-select {
+  width: 76px;
+  min-height: 30px;
+
+  padding: 2px 4px;
+
+  border: 1px solid rgba(13, 117, 100, 0.35);
+  border-radius: 4px;
+
+  background: var(--white);
+  color: var(--teal-deep);
+
+  font-size: 0.72rem;
+  font-weight: 500;
+  line-height: 1.2;
+
+  cursor: pointer;
+}
+
+.sort-select:hover {
+  border-color: var(--teal);
+}
+
+.sort-select:focus {
+  border-color: var(--teal);
+  outline: 2px solid var(--teal-light);
+  outline-offset: 1px;
+}
+
+@media (max-width: 640px) {
+  .sort-select {
+    width: 70px;
+    min-height: 28px;
+
+    font-size: 0.68rem;
+  }
+}

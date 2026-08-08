@@ -45,7 +45,8 @@
     tableBody: document.getElementById("article-table-body"),
     resultCount: document.querySelector(".result-count strong"),
     resultsStatus: document.getElementById("results-status"),
-    pagination: document.getElementById("pagination")
+    pagination: document.getElementById("pagination"),
+    sortSelects: Array.from(document.querySelectorAll(".sort-select"))
   };
 
   let articles = [];
@@ -53,6 +54,8 @@
   let currentPage = 1;
   let minYear = null;
   let maxYear = null;
+  let sortKey = "";
+  let sortDirection = "";
 
   function valueOrEmpty(value) {
     return value == null ? "" : String(value);
@@ -125,6 +128,112 @@
 
     // 同じ号の中ではExcel原本の掲載順を維持する。
     return a.__index - b.__index;
+  }
+
+
+  function getSortValue(article, key) {
+    switch (key) {
+      case "date":
+        return valueOrEmpty(article["刊行年月"]).trim();
+
+      case "issue": {
+        const value = Number(article["通号表示"]);
+        return Number.isFinite(value) ? value : null;
+      }
+
+      case "title":
+        return valueOrEmpty(article["記事タイトル"]).trim();
+
+      case "authors":
+        return valueOrEmpty(article.__authorsText).trim();
+
+      case "series":
+        return valueOrEmpty(article["特集・連載名"]).trim();
+
+      case "type":
+        return valueOrEmpty(article["記事種別"]).trim();
+
+      case "pages": {
+        const match = valueOrEmpty(article["掲載頁"]).match(/\d+/);
+        return match ? Number(match[0]) : null;
+      }
+
+      default:
+        return null;
+    }
+  }
+
+  function isBlankSortValue(value) {
+    return (
+      value == null ||
+      (typeof value === "string" && value.trim() === "")
+    );
+  }
+
+  function compareSortValues(a, b) {
+    const valueA = getSortValue(a, sortKey);
+    const valueB = getSortValue(b, sortKey);
+
+    const blankA = isBlankSortValue(valueA);
+    const blankB = isBlankSortValue(valueB);
+
+    // Blank cells stay at the bottom in both ascending and descending order.
+    if (blankA && blankB) {
+      return compareNewestFirst(a, b);
+    }
+
+    if (blankA) {
+      return 1;
+    }
+
+    if (blankB) {
+      return -1;
+    }
+
+    let comparison = 0;
+
+    if (
+      typeof valueA === "number" &&
+      typeof valueB === "number"
+    ) {
+      comparison = valueA - valueB;
+    } else {
+      comparison = String(valueA).localeCompare(
+        String(valueB),
+        "ja",
+        {
+          numeric: true,
+          sensitivity: "base"
+        }
+      );
+    }
+
+    if (comparison === 0) {
+      return compareNewestFirst(a, b);
+    }
+
+    return sortDirection === "desc"
+      ? -comparison
+      : comparison;
+  }
+
+  function applyCurrentSort() {
+    if (!sortKey || !sortDirection) {
+      filteredArticles.sort(compareNewestFirst);
+      return;
+    }
+
+    filteredArticles.sort(compareSortValues);
+  }
+
+  function syncSortControls() {
+    elements.sortSelects.forEach((select) => {
+      if (select.dataset.sortKey === sortKey) {
+        select.value = sortDirection;
+      } else {
+        select.value = "";
+      }
+    });
   }
 
   function uniqueSorted(values, locale = "ja") {
@@ -248,6 +357,7 @@
     }
 
     filteredArticles = articles.filter(articleMatches);
+    applyCurrentSort();
 
     if (resetPage) {
       currentPage = 1;
@@ -532,6 +642,11 @@
       params.set("series", series);
     }
 
+    if (sortKey && sortDirection) {
+      params.set("sort", sortKey);
+      params.set("dir", sortDirection);
+    }
+
     if (currentPage > 1) {
       params.set("page", String(currentPage));
     }
@@ -581,6 +696,30 @@
     ) {
       elements.yearTo.value = String(requestedTo);
     }
+
+    const requestedSort = params.get("sort") || "";
+    const requestedDirection = params.get("dir") || "";
+
+    const allowedSortKeys = new Set([
+      "date",
+      "issue",
+      "title",
+      "authors",
+      "series",
+      "type",
+      "pages"
+    ]);
+
+    if (
+      allowedSortKeys.has(requestedSort) &&
+      (requestedDirection === "asc" ||
+       requestedDirection === "desc")
+    ) {
+      sortKey = requestedSort;
+      sortDirection = requestedDirection;
+    }
+
+    syncSortControls();
 
     const requestedPage = Number(params.get("page"));
 
@@ -689,6 +828,27 @@
         downloadFilteredCsv
       );
     }
+
+    elements.sortSelects.forEach((select) => {
+      select.addEventListener("change", () => {
+        const direction = select.value;
+
+        if (direction) {
+          sortKey = select.dataset.sortKey;
+          sortDirection = direction;
+        } else {
+          sortKey = "";
+          sortDirection = "";
+        }
+
+        syncSortControls();
+
+        currentPage = 1;
+        applyCurrentSort();
+        render();
+        updateUrl();
+      });
+    });
 
     elements.pagination.addEventListener("click", (event) => {
       const button = event.target.closest("[data-page]");

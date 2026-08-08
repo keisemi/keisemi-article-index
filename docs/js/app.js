@@ -39,7 +39,7 @@
     articleType: document.getElementById("article-type"),
     series: document.getElementById("series"),
     seriesList: document.getElementById("series-list"),
-    clearButton: document.querySelector(".clear-button"),
+    clearButton: document.getElementById("clear-filters"),
     downloadFiltered: document.getElementById("download-filtered"),
     lastUpdated: document.getElementById("last-updated"),
     tableBody: document.getElementById("article-table-body"),

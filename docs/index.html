@@ -82,6 +82,15 @@
         <div class="magazine-title-wrap">
           <h1 class="magazine-title">経済セミナー</h1>
           <p class="magazine-title-en">THE KEIZAI SEMINAR</p>
+          <p class="magazine-publisher">
+            <a
+              href="https://www.nippyo.co.jp/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              株式会社日本評論社
+            </a>
+          </p>
         </div>
 
         <div class="hero-side">
@@ -229,7 +238,7 @@
 
 
           <div class="filter-actions">
-            <button type="button" class="clear-button">
+            <button type="button" class="clear-button" id="clear-filters">
               条件をクリア
             </button>
           </div>
@@ -248,7 +257,7 @@
         <div class="results-header">
 
           <div>
-            <span class="section-label section-label-yellow">
+            <span class="section-label section-label-teal">
               検索結果
             </span>
 
@@ -322,7 +331,7 @@
     </section>
 
 
-    <section class="data-section">
+    <section class="data-section" id="data">
 
       <div class="section-inner data-grid">
 
@@ -385,15 +394,15 @@
 
       <div class="section-inner about-inner">
 
-        <span class="section-label section-label-green">
+        <span class="section-label section-label-teal">
           ABOUT
         </span>
 
         <h2>このサイトについて</h2>
 
         <p>
-          本サイトは経済セミナー編集部が運営しており、創刊号から最新号の記事情報を整理し、検索・閲覧いただける形に公開しています。<br>
-          バックデータのダウンロードも可能です。<br>
+          本サイトは経済セミナー編集部が運営しており、創刊号から最新号の記事情報を整理し、検索・閲覧いただける形に公開しています。
+          バックデータもExcel、csv形式でダウンロードいただけます。<br>
           記事目録データは随時更新します。
         </p>
 
@@ -425,8 +434,14 @@
 
 
       <nav class="footer-nav" aria-label="Footer navigation">
-        <a href="#">データについて</a>
-        <a href="#">ライセンス</a>
+        <a href="#data">データについて</a>
+        <a
+          href="https://github.com/keisemi/keisemi-article-index/blob/main/LICENSE.md"
+          target="_blank"
+          rel="noopener"
+        >
+          ライセンス
+        </a>
         <a
           href="https://github.com/keisemi/keisemi-article-index"
           target="_blank"

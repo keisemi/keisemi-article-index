@@ -19,7 +19,7 @@
   --gray-500: #777774;
   --gray-700: #444441;
 
-  --content-width: 1240px;
+  --content-width: 1160px;
 }
 
 
@@ -108,7 +108,7 @@ select {
   max-width: var(--content-width);
 
   margin: 0 auto;
-  padding: 52px 34px 72px;
+  padding: 36px 34px 52px;
 }
 
 .hero-main {
@@ -135,7 +135,7 @@ select {
     "YuGothic",
     sans-serif;
 
-  font-size: clamp(4.2rem, 8vw, 7.2rem);
+  font-size: clamp(3.8rem, 6.8vw, 6.2rem);
   font-weight: 500;
   line-height: 0.95;
 
@@ -147,15 +147,40 @@ select {
 
   color: var(--teal);
 
-  font-size: clamp(1.05rem, 2vw, 1.85rem);
+  font-size: clamp(1rem, 1.65vw, 1.55rem);
   font-weight: 700;
 
   letter-spacing: 0.04em;
 }
 
+.magazine-publisher {
+  margin: 7px 0 0;
+
+  color: var(--gray-700);
+
+  font-size: 0.78rem;
+  font-weight: 500;
+  line-height: 1.4;
+
+  letter-spacing: 0.03em;
+}
+
+.magazine-publisher a {
+  border-bottom: 1px solid transparent;
+
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.magazine-publisher a:hover {
+  color: var(--teal-dark);
+  border-bottom-color: var(--teal);
+}
+
 .index-badge {
-  width: 176px;
-  height: 176px;
+  width: 154px;
+  height: 154px;
 
   flex: 0 0 auto;
 
@@ -175,7 +200,7 @@ select {
 .badge-main {
   display: block;
 
-  font-size: 1.12rem;
+  font-size: 1rem;
   font-weight: 700;
   line-height: 1.1;
 
@@ -199,9 +224,9 @@ select {
 }
 
 .hero-copy {
-  max-width: 1100px;
+  max-width: 980px;
 
-  margin-top: 58px;
+  margin-top: 38px;
 }
 
 .cover-label,
@@ -235,7 +260,7 @@ select {
 
   max-width: none;
 
-  font-size: clamp(2.2rem, 5vw, 4.6rem);
+  font-size: clamp(2rem, 3.5vw, 2.9rem);
   font-weight: 500;
   line-height: 1.32;
 
@@ -253,9 +278,9 @@ select {
 
   color: var(--gray-700);
 
-  font-size: 1.08rem;
+  font-size: 1rem;
   font-weight: 500;
-  line-height: 1.9;
+  line-height: 1.8;
 }
 
 .cover-colors {
@@ -318,9 +343,9 @@ select {
 }
 
 .section-label-yellow {
-  border-color: var(--black);
-  background: var(--yellow);
-  color: var(--black);
+  border-color: var(--teal);
+  background: var(--teal);
+  color: var(--white);
 }
 
 .section-label-teal {
@@ -330,9 +355,9 @@ select {
 }
 
 .section-label-green {
-  border-color: var(--black);
-  background: var(--green);
-  color: var(--black);
+  border-color: var(--teal);
+  background: var(--teal);
+  color: var(--white);
 }
 
 
@@ -798,13 +823,44 @@ select {
 
 
 /* --------------------------------------------------
+   Compact desktop hero
+   Keep the decorative badge/mark at the right without
+   forcing the entire hero to inherit their vertical height.
+-------------------------------------------------- */
+
+@media (min-width: 1101px) {
+
+  .hero-main {
+    display: block;
+  }
+
+  .magazine-title-wrap {
+    padding-right: 220px;
+  }
+
+  .hero-side {
+    position: absolute;
+    top: 105px;
+    right: 34px;
+  }
+
+  .hero-copy {
+    width: calc(100% - 220px);
+    max-width: 900px;
+    margin-top: 34px;
+  }
+
+}
+
+
+/* --------------------------------------------------
    Responsive
 -------------------------------------------------- */
 
 @media (max-width: 900px) {
 
   .hero-inner {
-    padding-top: 38px;
+    padding-top: 30px;
   }
 
   .index-badge {
@@ -817,7 +873,7 @@ select {
   }
 
   .hero-copy {
-    margin-top: 55px;
+    margin-top: 38px;
   }
 
   .filter-grid {
@@ -864,6 +920,12 @@ select {
     font-size: 0.92rem;
   }
 
+  .magazine-publisher {
+    margin-top: 6px;
+
+    font-size: 0.72rem;
+  }
+
   .index-badge {
     width: 98px;
     height: 98px;
@@ -884,7 +946,7 @@ select {
   }
 
   .hero-copy {
-    margin-top: 45px;
+    margin-top: 34px;
   }
 
   .hero-copy h2 {
@@ -960,8 +1022,8 @@ select {
 
   gap: 24px;
 
-  margin-bottom: 34px;
-  padding-bottom: 14px;
+  margin-bottom: 24px;
+  padding-bottom: 12px;
 
   border-bottom: 1px solid rgba(21, 151, 127, 0.27);
 }
@@ -1070,8 +1132,8 @@ select {
 .hero-character {
   display: block;
 
-  width: 96px;
-  height: 96px;
+  width: 88px;
+  height: 88px;
 
   object-fit: contain;
 

@@ -1,0 +1,7 @@
+置き換えるファイルは次の3点です。
+
+- docs/index.html
+- docs/css/style.css
+- docs/js/app.js
+
+README と scripts/build_data.R は今回は変更していません。

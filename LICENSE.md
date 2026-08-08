@@ -24,7 +24,9 @@ When using the article-index data, please indicate that the data are derived fro
 
 A recommended citation will be provided in the README.
 
-推奨する出典表記については、READMEに記載します。
+出典表記：
+
+> 株式会社日本評論社「『経済セミナー』全記事データベース」 (https://keisemi.github.io/keisemi-article-index/)
 
 ## Third-party materials / 第三者の著作物
 

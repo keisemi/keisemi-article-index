@@ -1,0 +1,810 @@
+(() => {
+  "use strict";
+
+  const DATA_URL = "data/articles.json";
+  const PAGE_SIZE = 50;
+
+  const sourceColumns = [
+    "通号表示",
+    "年・月号表示",
+    "刊行年月",
+    "記事タイトル",
+    "特集・連載名",
+    "記事種別",
+    "掲載頁",
+    "著者1",
+    "著者2",
+    "著者3",
+    "著者4",
+    "著者5",
+    "著者6",
+    "著者7",
+    "著者8",
+    "著者9",
+    "著者10",
+    "著者11",
+    "著者12"
+  ];
+
+  const authorColumns = sourceColumns.filter((name) =>
+    name.startsWith("著者")
+  );
+
+  const elements = {
+    keyword: document.getElementById("keyword"),
+    searchButton: document.querySelector(".search-button"),
+    yearFrom: document.getElementById("year-from"),
+    yearTo: document.getElementById("year-to"),
+    author: document.getElementById("author"),
+    articleType: document.getElementById("article-type"),
+    series: document.getElementById("series"),
+    seriesList: document.getElementById("series-list"),
+    clearButton: document.querySelector(".clear-button"),
+    downloadFiltered: document.getElementById("download-filtered"),
+    lastUpdated: document.getElementById("last-updated"),
+    tableBody: document.getElementById("article-table-body"),
+    resultCount: document.querySelector(".result-count strong"),
+    resultsStatus: document.getElementById("results-status"),
+    pagination: document.getElementById("pagination")
+  };
+
+  let articles = [];
+  let filteredArticles = [];
+  let currentPage = 1;
+  let minYear = null;
+  let maxYear = null;
+
+  function valueOrEmpty(value) {
+    return value == null ? "" : String(value);
+  }
+
+  function normalizeText(value) {
+    return valueOrEmpty(value)
+      .normalize("NFKC")
+      .toLocaleLowerCase("ja-JP")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function splitTerms(value) {
+    return normalizeText(value)
+      .split(" ")
+      .filter(Boolean);
+  }
+
+  function getAuthors(article) {
+    return authorColumns
+      .map((column) => valueOrEmpty(article[column]).trim())
+      .filter(Boolean);
+  }
+
+  function getYear(article) {
+    const match = valueOrEmpty(article["刊行年月"]).match(/^(\d{4})/);
+    return match ? Number(match[1]) : null;
+  }
+
+  function prepareArticle(article, originalIndex) {
+    const authors = getAuthors(article);
+    const year = getYear(article);
+
+    const searchParts = [
+      article["通号表示"],
+      article["年・月号表示"],
+      article["刊行年月"],
+      article["記事タイトル"],
+      article["特集・連載名"],
+      article["記事種別"],
+      article["掲載頁"],
+      ...authors
+    ];
+
+    return {
+      ...article,
+      __index: originalIndex,
+      __authors: authors,
+      __authorsText: authors.join("／"),
+      __year: year,
+      __searchText: normalizeText(searchParts.join(" "))
+    };
+  }
+
+  function compareNewestFirst(a, b) {
+    const dateA = valueOrEmpty(a["刊行年月"]);
+    const dateB = valueOrEmpty(b["刊行年月"]);
+
+    if (dateA !== dateB) {
+      return dateB.localeCompare(dateA);
+    }
+
+    const issueA = Number(a["通号表示"]) || 0;
+    const issueB = Number(b["通号表示"]) || 0;
+
+    if (issueA !== issueB) {
+      return issueB - issueA;
+    }
+
+    // 同じ号の中ではExcel原本の掲載順を維持する。
+    return a.__index - b.__index;
+  }
+
+  function uniqueSorted(values, locale = "ja") {
+    return Array.from(
+      new Set(values.filter((value) => value !== ""))
+    ).sort((a, b) =>
+      String(a).localeCompare(String(b), locale, {
+        numeric: true,
+        sensitivity: "base"
+      })
+    );
+  }
+
+  function populateFilters() {
+    const years = uniqueSorted(
+      articles
+        .map((article) => article.__year)
+        .filter((year) => Number.isFinite(year))
+        .map(String)
+    ).map(Number);
+
+    minYear = Math.min(...years);
+    maxYear = Math.max(...years);
+
+    elements.yearFrom.innerHTML = years
+      .map((year) => `<option value="${year}">${year}</option>`)
+      .join("");
+
+    elements.yearTo.innerHTML = years
+      .map((year) => `<option value="${year}">${year}</option>`)
+      .join("");
+
+    elements.yearFrom.value = String(minYear);
+    elements.yearTo.value = String(maxYear);
+
+    const articleTypes = uniqueSorted(
+      articles.map((article) =>
+        valueOrEmpty(article["記事種別"]).trim()
+      )
+    );
+
+    elements.articleType.innerHTML = [
+      '<option value="">すべて</option>',
+      ...articleTypes.map(
+        (type) =>
+          `<option value="${escapeHtml(type)}">${escapeHtml(type)}</option>`
+      )
+    ].join("");
+
+    const seriesNames = uniqueSorted(
+      articles.map((article) =>
+        valueOrEmpty(article["特集・連載名"]).trim()
+      )
+    );
+
+    elements.seriesList.innerHTML = seriesNames
+      .map(
+        (seriesName) =>
+          `<option value="${escapeHtml(seriesName)}"></option>`
+      )
+      .join("");
+  }
+
+  function articleMatches(article) {
+    const keywordTerms = splitTerms(elements.keyword.value);
+    const authorTerms = splitTerms(elements.author.value);
+    const seriesTerms = splitTerms(elements.series.value);
+
+    const selectedType = normalizeText(elements.articleType.value);
+
+    const fromYear = Number(elements.yearFrom.value);
+    const toYear = Number(elements.yearTo.value);
+
+    if (
+      Number.isFinite(article.__year) &&
+      (article.__year < fromYear || article.__year > toYear)
+    ) {
+      return false;
+    }
+
+    if (
+      selectedType &&
+      normalizeText(article["記事種別"]) !== selectedType
+    ) {
+      return false;
+    }
+
+    const authorText = normalizeText(article.__authorsText);
+
+    if (
+      authorTerms.length > 0 &&
+      !authorTerms.every((term) => authorText.includes(term))
+    ) {
+      return false;
+    }
+
+    const seriesText = normalizeText(article["特集・連載名"]);
+
+    if (
+      seriesTerms.length > 0 &&
+      !seriesTerms.every((term) => seriesText.includes(term))
+    ) {
+      return false;
+    }
+
+    if (
+      keywordTerms.length > 0 &&
+      !keywordTerms.every((term) => article.__searchText.includes(term))
+    ) {
+      return false;
+    }
+
+    return true;
+  }
+
+  function runSearch({ resetPage = true, updateAddress = true } = {}) {
+    if (Number(elements.yearFrom.value) > Number(elements.yearTo.value)) {
+      const oldFrom = elements.yearFrom.value;
+      elements.yearFrom.value = elements.yearTo.value;
+      elements.yearTo.value = oldFrom;
+    }
+
+    filteredArticles = articles.filter(articleMatches);
+
+    if (resetPage) {
+      currentPage = 1;
+    }
+
+    const totalPages = getTotalPages();
+
+    if (currentPage > totalPages) {
+      currentPage = Math.max(1, totalPages);
+    }
+
+    render();
+
+    if (updateAddress) {
+      updateUrl();
+    }
+  }
+
+  function getTotalPages() {
+    return Math.ceil(filteredArticles.length / PAGE_SIZE);
+  }
+
+  function getCurrentPageRows() {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filteredArticles.slice(start, start + PAGE_SIZE);
+  }
+
+  function render() {
+    elements.resultCount.textContent =
+      filteredArticles.length.toLocaleString("ja-JP");
+
+    if (elements.downloadFiltered) {
+      elements.downloadFiltered.disabled =
+        filteredArticles.length === 0;
+    }
+
+    renderTable();
+    renderStatus();
+    renderPagination();
+  }
+
+  function renderTable() {
+    if (filteredArticles.length === 0) {
+      elements.tableBody.innerHTML = `
+        <tr class="empty-row">
+          <td colspan="7">
+            条件に一致する記事はありません。
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    const rows = getCurrentPageRows();
+
+    elements.tableBody.innerHTML = rows
+      .map((article) => {
+        const issueDate =
+          valueOrEmpty(article["年・月号表示"]).trim() ||
+          valueOrEmpty(article["刊行年月"]).trim() ||
+          "—";
+
+        const issue =
+          valueOrEmpty(article["通号表示"]).trim() || "—";
+
+        const title =
+          valueOrEmpty(article["記事タイトル"]).trim() || "—";
+
+        const authors =
+          article.__authorsText || "—";
+
+        const series =
+          valueOrEmpty(article["特集・連載名"]).trim() || "—";
+
+        const type =
+          valueOrEmpty(article["記事種別"]).trim() || "—";
+
+        const pages =
+          valueOrEmpty(article["掲載頁"]).trim() || "—";
+
+        return `
+          <tr>
+            <td class="cell-date">${escapeHtml(issueDate)}</td>
+            <td class="cell-issue">${escapeHtml(issue)}</td>
+            <td class="cell-title">${escapeHtml(title)}</td>
+            <td class="cell-authors">${escapeHtml(authors)}</td>
+            <td class="cell-series">${escapeHtml(series)}</td>
+            <td class="cell-type">${escapeHtml(type)}</td>
+            <td class="cell-pages">${escapeHtml(pages)}</td>
+          </tr>
+        `;
+      })
+      .join("");
+  }
+
+  function renderStatus() {
+    if (filteredArticles.length === 0) {
+      elements.resultsStatus.textContent = "0件";
+      return;
+    }
+
+    const start = (currentPage - 1) * PAGE_SIZE + 1;
+    const end = Math.min(
+      currentPage * PAGE_SIZE,
+      filteredArticles.length
+    );
+
+    elements.resultsStatus.textContent =
+      `${filteredArticles.length.toLocaleString("ja-JP")}件中 ` +
+      `${start.toLocaleString("ja-JP")}–${end.toLocaleString("ja-JP")}件を表示`;
+  }
+
+  function renderPagination() {
+    const totalPages = getTotalPages();
+
+    if (totalPages <= 1) {
+      elements.pagination.innerHTML = "";
+      return;
+    }
+
+    const items = buildPageItems(currentPage, totalPages);
+
+    const previousDisabled = currentPage === 1;
+    const nextDisabled = currentPage === totalPages;
+
+    elements.pagination.innerHTML = `
+      <button
+        class="page-button page-prev"
+        type="button"
+        data-page="${currentPage - 1}"
+        ${previousDisabled ? "disabled" : ""}
+      >
+        ‹ 前へ
+      </button>
+
+      <div class="page-numbers">
+        ${items
+          .map((item) => {
+            if (item === "ellipsis") {
+              return '<span class="page-ellipsis" aria-hidden="true">…</span>';
+            }
+
+            const isCurrent = item === currentPage;
+
+            return `
+              <button
+                class="page-button page-number${isCurrent ? " is-current" : ""}"
+                type="button"
+                data-page="${item}"
+                ${isCurrent ? 'aria-current="page"' : ""}
+              >
+                ${item}
+              </button>
+            `;
+          })
+          .join("")}
+      </div>
+
+      <button
+        class="page-button page-next"
+        type="button"
+        data-page="${currentPage + 1}"
+        ${nextDisabled ? "disabled" : ""}
+      >
+        次へ ›
+      </button>
+    `;
+  }
+
+  function buildPageItems(current, total) {
+    if (total <= 9) {
+      return Array.from({ length: total }, (_, i) => i + 1);
+    }
+
+    const pages = new Set([
+      1,
+      2,
+      total - 1,
+      total,
+      current - 2,
+      current - 1,
+      current,
+      current + 1,
+      current + 2
+    ]);
+
+    const validPages = Array.from(pages)
+      .filter((page) => page >= 1 && page <= total)
+      .sort((a, b) => a - b);
+
+    const result = [];
+
+    validPages.forEach((page, index) => {
+      if (
+        index > 0 &&
+        page - validPages[index - 1] > 1
+      ) {
+        result.push("ellipsis");
+      }
+
+      result.push(page);
+    });
+
+    return result;
+  }
+
+  function changePage(page) {
+    const totalPages = getTotalPages();
+
+    if (
+      !Number.isInteger(page) ||
+      page < 1 ||
+      page > totalPages ||
+      page === currentPage
+    ) {
+      return;
+    }
+
+    currentPage = page;
+    render();
+    updateUrl();
+
+    document.querySelector(".results-section")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+  }
+
+  function clearSearch() {
+    elements.keyword.value = "";
+    elements.author.value = "";
+    elements.articleType.value = "";
+    elements.series.value = "";
+
+    if (minYear != null) {
+      elements.yearFrom.value = String(minYear);
+    }
+
+    if (maxYear != null) {
+      elements.yearTo.value = String(maxYear);
+    }
+
+    runSearch();
+    elements.keyword.focus();
+  }
+
+  function updateUrl() {
+    const params = new URLSearchParams();
+
+    const keyword = elements.keyword.value.trim();
+    const author = elements.author.value.trim();
+    const series = elements.series.value.trim();
+    const type = elements.articleType.value;
+
+    if (keyword) {
+      params.set("q", keyword);
+    }
+
+    if (author) {
+      params.set("author", author);
+    }
+
+    if (
+      minYear != null &&
+      Number(elements.yearFrom.value) !== minYear
+    ) {
+      params.set("from", elements.yearFrom.value);
+    }
+
+    if (
+      maxYear != null &&
+      Number(elements.yearTo.value) !== maxYear
+    ) {
+      params.set("to", elements.yearTo.value);
+    }
+
+    if (type) {
+      params.set("type", type);
+    }
+
+    if (series) {
+      params.set("series", series);
+    }
+
+    if (currentPage > 1) {
+      params.set("page", String(currentPage));
+    }
+
+    const query = params.toString();
+    const newUrl =
+      window.location.pathname +
+      (query ? `?${query}` : "") +
+      window.location.hash;
+
+    window.history.replaceState(null, "", newUrl);
+  }
+
+  function applyUrlParameters() {
+    const params = new URLSearchParams(window.location.search);
+
+    elements.keyword.value = params.get("q") || "";
+    elements.author.value = params.get("author") || "";
+    elements.series.value = params.get("series") || "";
+
+    const requestedType = params.get("type");
+
+    if (
+      requestedType &&
+      Array.from(elements.articleType.options).some(
+        (option) => option.value === requestedType
+      )
+    ) {
+      elements.articleType.value = requestedType;
+    }
+
+    const requestedFrom = Number(params.get("from"));
+    const requestedTo = Number(params.get("to"));
+
+    if (
+      Number.isFinite(requestedFrom) &&
+      requestedFrom >= minYear &&
+      requestedFrom <= maxYear
+    ) {
+      elements.yearFrom.value = String(requestedFrom);
+    }
+
+    if (
+      Number.isFinite(requestedTo) &&
+      requestedTo >= minYear &&
+      requestedTo <= maxYear
+    ) {
+      elements.yearTo.value = String(requestedTo);
+    }
+
+    const requestedPage = Number(params.get("page"));
+
+    if (
+      Number.isInteger(requestedPage) &&
+      requestedPage >= 1
+    ) {
+      currentPage = requestedPage;
+    }
+  }
+
+  function csvEscape(value) {
+    const text = valueOrEmpty(value);
+
+    if (
+      text.includes(",") ||
+      text.includes('"') ||
+      text.includes("\n") ||
+      text.includes("\r")
+    ) {
+      return `"${text.replaceAll('"', '""')}"`;
+    }
+
+    return text;
+  }
+
+  function downloadFilteredCsv() {
+    if (filteredArticles.length === 0) {
+      return;
+    }
+
+    const rows = [
+      sourceColumns.join(","),
+      ...filteredArticles.map((article) =>
+        sourceColumns
+          .map((column) => csvEscape(article[column]))
+          .join(",")
+      )
+    ];
+
+    // BOM付きUTF-8にしてExcelでも日本語が文字化けしにくくする。
+    const blob = new Blob(
+      ["\uFEFF" + rows.join("\r\n")],
+      {
+        type: "text/csv;charset=utf-8"
+      }
+    );
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = "keisemi-search-results.csv";
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    URL.revokeObjectURL(url);
+  }
+
+  function bindEvents() {
+    elements.searchButton.addEventListener("click", () =>
+      runSearch()
+    );
+
+    elements.keyword.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        runSearch();
+      }
+    });
+
+    elements.author.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        runSearch();
+      }
+    });
+
+    elements.series.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        runSearch();
+      }
+    });
+
+    [
+      elements.yearFrom,
+      elements.yearTo,
+      elements.articleType
+    ].forEach((element) => {
+      element.addEventListener("change", () =>
+        runSearch()
+      );
+    });
+
+    elements.clearButton.addEventListener(
+      "click",
+      clearSearch
+    );
+
+    if (elements.downloadFiltered) {
+      elements.downloadFiltered.addEventListener(
+        "click",
+        downloadFilteredCsv
+      );
+    }
+
+    elements.pagination.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-page]");
+
+      if (!button || button.disabled) {
+        return;
+      }
+
+      changePage(Number(button.dataset.page));
+    });
+  }
+
+  function escapeHtml(value) {
+    return valueOrEmpty(value)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  async function loadLastUpdated() {
+    if (!elements.lastUpdated) {
+      return;
+    }
+
+    try {
+      const response = await fetch("data/last-updated.txt", {
+        cache: "no-cache"
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to load last-updated.txt: HTTP ${response.status}`
+        );
+      }
+
+      const dateText = (await response.text()).trim();
+
+      elements.lastUpdated.textContent = dateText || "—";
+    } catch (error) {
+      console.warn("Could not load last updated date.", error);
+      elements.lastUpdated.textContent = "—";
+    }
+  }
+
+  function showError(error) {
+    console.error(error);
+
+    elements.resultCount.textContent = "—";
+
+    elements.tableBody.innerHTML = `
+      <tr class="error-row">
+        <td colspan="7">
+          記事データを読み込めませんでした。
+          ページを再読み込みしても解決しない場合は、
+          データ生成処理を確認してください。
+        </td>
+      </tr>
+    `;
+
+    elements.resultsStatus.textContent =
+      "記事データの読み込みに失敗しました。";
+
+    elements.pagination.innerHTML = "";
+
+    if (elements.downloadFiltered) {
+      elements.downloadFiltered.disabled = true;
+    }
+  }
+
+  async function initialize() {
+    loadLastUpdated();
+
+    try {
+      const response = await fetch(DATA_URL, {
+        cache: "no-cache"
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to load ${DATA_URL}: HTTP ${response.status}`
+        );
+      }
+
+      const rawArticles = await response.json();
+
+      if (!Array.isArray(rawArticles)) {
+        throw new Error("articles.json is not an array.");
+      }
+
+      articles = rawArticles
+        .map(prepareArticle)
+        .sort(compareNewestFirst);
+
+      populateFilters();
+      applyUrlParameters();
+      bindEvents();
+
+      runSearch({
+        resetPage: false,
+        updateAddress: false
+      });
+
+      const totalPages = getTotalPages();
+
+      if (currentPage > totalPages) {
+        currentPage = Math.max(1, totalPages);
+        render();
+      }
+
+      updateUrl();
+    } catch (error) {
+      showError(error);
+    }
+  }
+
+  initialize();
+})();

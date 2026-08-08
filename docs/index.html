@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>『経済セミナー』全記事目録</title>
+
+  <meta
+    name="description"
+    content="『経済セミナー』創刊号以降の記事を検索・閲覧できる全記事目録です。"
+  >
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  >
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+  <header class="hero">
+
+    <div class="hero-inner">
+
+      <div class="hero-utility">
+
+        <span class="hero-utility-label">KEIZAI SEMINAR ARCHIVE</span>
+
+        <nav class="social-links" aria-label="『経済セミナー』公式SNS">
+
+          <a
+            class="social-link"
+            href="https://x.com/keisemi"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="『経済セミナー』公式X @keisemi"
+          >
+            <img
+              class="social-icon"
+              src="assets/x-icon.svg"
+              alt=""
+              aria-hidden="true"
+            >
+            <span class="social-meta">
+              <strong>X</strong>
+              <small>@keisemi</small>
+            </span>
+            <span class="social-arrow" aria-hidden="true">↗</span>
+          </a>
+
+          <a
+            class="social-link"
+            href="https://note.com/keisemi"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="『経済セミナー』公式note"
+          >
+            <img
+              class="social-icon"
+              src="assets/note-icon.svg"
+              alt=""
+              aria-hidden="true"
+            >
+            <span class="social-meta">
+              <strong>note</strong>
+              <small>keisemi</small>
+            </span>
+            <span class="social-arrow" aria-hidden="true">↗</span>
+          </a>
+
+        </nav>
+
+      </div>
+
+      <div class="hero-main">
+
+        <div class="magazine-title-wrap">
+          <h1 class="magazine-title">経済セミナー</h1>
+          <p class="magazine-title-en">THE KEIZAI SEMINAR</p>
+        </div>
+
+        <div class="hero-side">
+
+          <div class="index-badge" aria-label="Article Index">
+            <span class="badge-main">ARTICLE</span>
+            <span class="badge-main">INDEX</span>
+            <span class="badge-line"></span>
+            <span class="badge-year">1957—</span>
+          </div>
+
+          <img
+            class="hero-character"
+            src="assets/keisemi-face.png"
+            alt=""
+            aria-hidden="true"
+          >
+
+        </div>
+
+      </div>
+
+      <div class="hero-copy">
+        <span class="cover-label">全記事目録</span>
+
+        <!-- HERO TITLE FIXED -->
+        <h2>
+          <span class="hero-line">創刊号～最新号を収録</span><br>
+          <span class="hero-line">『経済セミナー』全記事データベース（β版）</span>
+        </h2>
+
+        <p>
+          キーワード、著者、発行年、特集・連載などから、
+          1957年4月号（創刊号）以降の『経済セミナー』に掲載されたすべての記事を検索できます。<br>
+          全記事総目次のバックデータもダウンロードいただけます。
+        </p>
+
+        <p>
+          <small>
+            最終更新日：<span id="last-updated">—</span>
+          </small>
+        </p>
+      </div>
+
+    </div>
+
+    <div class="cover-colors" aria-hidden="true">
+      <span class="color-teal"></span>
+      <span class="color-yellow"></span>
+      <span class="color-pink"></span>
+      <span class="color-green"></span>
+    </div>
+
+  </header>
+
+
+  <main>
+
+    <section class="search-section">
+
+      <div class="section-inner">
+
+        <div class="section-heading">
+          <span class="section-label">記事を探す</span>
+          <h2>全記事検索</h2>
+        </div>
+
+        <div class="search-panel">
+
+          <div class="keyword-search">
+
+            <label for="keyword">
+              キーワード
+            </label>
+
+            <div class="keyword-box">
+              <input
+                id="keyword"
+                type="search"
+                placeholder="タイトル・著者・特集名などを検索"
+              >
+
+              <button type="button" class="search-button">
+                検索
+              </button>
+            </div>
+
+          </div>
+
+
+          <div class="filter-grid">
+
+            <div class="filter-item">
+              <label for="year-from">発行年</label>
+
+              <div class="year-range">
+                <select id="year-from">
+                  <option>1957</option>
+                </select>
+
+                <span>〜</span>
+
+                <select id="year-to">
+                  <option>2026</option>
+                </select>
+              </div>
+            </div>
+
+
+            <div class="filter-item">
+              <label for="author">著者</label>
+
+              <input
+                id="author"
+                type="text"
+                placeholder="著者名を入力"
+              >
+            </div>
+
+
+            <div class="filter-item">
+              <label for="article-type">記事種別</label>
+
+              <select id="article-type">
+                <option>すべて</option>
+              </select>
+            </div>
+
+
+            <div class="filter-item">
+              <label for="series">特集・連載</label>
+
+              <input
+                id="series"
+                type="text"
+                list="series-list"
+                placeholder="特集・連載名を入力"
+                autocomplete="off"
+              >
+
+              <datalist id="series-list"></datalist>
+            </div>
+
+          </div>
+
+
+          <div class="filter-actions">
+            <button type="button" class="clear-button">
+              条件をクリア
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <section class="results-section">
+
+      <div class="section-inner">
+
+        <div class="results-header">
+
+          <div>
+            <span class="section-label section-label-yellow">
+              検索結果
+            </span>
+
+            <h2>記事一覧</h2>
+          </div>
+
+          <div class="result-count">
+            <strong>—</strong>
+            <span>件</span>
+          </div>
+
+        </div>
+
+
+        <div class="table-wrap">
+
+          <table class="article-table">
+
+            <thead>
+              <tr>
+                <th>発行年月</th>
+                <th>号</th>
+                <th>記事タイトル</th>
+                <th>著者</th>
+                <th>特集・連載</th>
+                <th>種別</th>
+                <th>頁</th>
+              </tr>
+            </thead>
+
+            <tbody id="article-table-body">
+              <tr class="placeholder-row">
+                <td colspan="7">
+                  記事データを読み込んでいます。
+                </td>
+              </tr>
+            </tbody>
+
+          </table>
+
+        </div>
+
+        <div class="results-controls">
+
+          <p
+            id="results-status"
+            class="results-status"
+            aria-live="polite"
+          >
+            データを読み込んでいます。
+          </p>
+
+          <button
+            type="button"
+            class="clear-button"
+            id="download-filtered"
+          >
+            検索結果をCSVでダウンロード
+          </button>
+
+          <nav
+            id="pagination"
+            class="pagination"
+            aria-label="検索結果のページ送り"
+          ></nav>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <section class="data-section">
+
+      <div class="section-inner data-grid">
+
+        <div class="data-intro">
+
+          <span class="section-label section-label-teal">
+            DATA
+          </span>
+
+          <h2>記事目録データを利用する</h2>
+
+          <p>
+            記事目録の原データは、ExcelおよびCSV形式でも公開しています。
+          </p>
+
+        </div>
+
+
+        <div class="data-links">
+
+          <a
+            class="data-link"
+            href="data/keisemi-article-index.xlsx"
+            download
+          >
+            <span class="data-link-type">XLSX</span>
+
+            <span class="data-link-text">
+              <strong>Excelデータ</strong>
+              <small>原データをダウンロード</small>
+            </span>
+
+            <span class="data-link-arrow">→</span>
+          </a>
+
+
+          <a
+            class="data-link"
+            href="data/articles.csv"
+            download
+          >
+            <span class="data-link-type">CSV</span>
+
+            <span class="data-link-text">
+              <strong>CSVデータ</strong>
+              <small>分析用データをダウンロード</small>
+            </span>
+
+            <span class="data-link-arrow">→</span>
+          </a>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <section class="about-section">
+
+      <div class="section-inner about-inner">
+
+        <span class="section-label section-label-green">
+          ABOUT
+        </span>
+
+        <h2>このサイトについて</h2>
+
+        <p>
+          本サイトは、『経済セミナー』創刊号以降の記事情報を整理し、
+          検索・閲覧できる形で公開するものです。
+          記事目録データは随時更新します。
+        </p>
+
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <footer class="site-footer">
+
+    <div class="footer-inner">
+
+      <div class="publisher">
+
+        <img
+          src="assets/nippyo-logo.png"
+          alt="日本評論社"
+          class="publisher-logo"
+        >
+
+        <div class="publisher-text">
+          <strong>『経済セミナー』編集部</strong>
+          <span>Keizai Seminar Editorial Office</span>
+        </div>
+
+      </div>
+
+
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="#">データについて</a>
+        <a href="#">ライセンス</a>
+        <a
+          href="https://github.com/keisemi/keisemi-article-index"
+          target="_blank"
+          rel="noopener"
+        >
+          GitHub
+        </a>
+      </nav>
+
+    </div>
+
+  </footer>
+
+  <script src="js/app.js" defer></script>
+
+</body>
+</html>

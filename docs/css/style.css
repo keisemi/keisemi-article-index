@@ -1572,3 +1572,196 @@ select {
 
   background: var(--gray-500);
 }
+
+
+/* ==================================================
+   Latest issue shortcut
+================================================== */
+
+.search-quick-actions {
+  display: flex;
+  justify-content: flex-end;
+
+  margin-top: 12px;
+}
+
+.latest-issue-button {
+  padding: 7px 0;
+
+  border: 0;
+  border-bottom: 1px solid var(--teal);
+
+  background: transparent;
+  color: var(--teal-dark);
+
+  font-size: 0.86rem;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    color 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.latest-issue-button:hover:not(:disabled) {
+  border-bottom-color: var(--teal-dark);
+  color: var(--teal-deep);
+}
+
+.latest-issue-button:disabled {
+  opacity: 0.42;
+  cursor: default;
+}
+
+
+/* ==================================================
+   Sticky article-table header
+================================================== */
+
+.sticky-table-header {
+  position: fixed;
+  top: 0;
+  z-index: 80;
+
+  overflow: hidden;
+
+  border-top: 3px solid var(--teal);
+  border-bottom: 1px solid var(--teal);
+
+  background: var(--teal-pale);
+
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.09);
+
+  pointer-events: none;
+}
+
+.sticky-table-header[hidden] {
+  display: none;
+}
+
+.sticky-table-header-inner {
+  width: max-content;
+
+  will-change: transform;
+}
+
+.sticky-header-table {
+  margin: 0;
+
+  border-collapse: collapse;
+}
+
+.sticky-header-table th {
+  overflow: hidden;
+
+  padding: 14px;
+
+  border-bottom: 0;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+
+/* ==================================================
+   Citation copy
+================================================== */
+
+.title-cell-content {
+  display: flex;
+  align-items: flex-start;
+
+  gap: 9px;
+}
+
+.title-cell-text {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.citation-copy-button {
+  position: relative;
+
+  width: 28px;
+  height: 28px;
+
+  flex: 0 0 28px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  margin: -3px 0 0;
+
+  padding: 0;
+
+  border: 1px solid var(--gray-200);
+  border-radius: 4px;
+
+  background: var(--white);
+  color: var(--gray-500);
+
+  cursor: pointer;
+
+  transition:
+    border-color 0.12s ease,
+    background 0.12s ease,
+    color 0.12s ease;
+}
+
+.citation-copy-button:hover {
+  border-color: var(--teal);
+  color: var(--teal-dark);
+}
+
+.citation-copy-button:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+
+.citation-copy-icon {
+  width: 15px;
+  height: 15px;
+
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.citation-copy-done {
+  display: none;
+
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.citation-copy-button.is-copied {
+  border-color: var(--teal);
+  background: var(--teal);
+  color: var(--white);
+}
+
+.citation-copy-button.is-copied .citation-copy-icon {
+  display: none;
+}
+
+.citation-copy-button.is-copied .citation-copy-done {
+  display: inline;
+}
+
+@media (max-width: 640px) {
+  .search-quick-actions {
+    justify-content: flex-start;
+  }
+
+  .citation-copy-button {
+    width: 30px;
+    height: 30px;
+
+    flex-basis: 30px;
+  }
+}

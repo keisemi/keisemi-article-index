@@ -50,7 +50,10 @@
     tableWrap: document.getElementById("article-table-wrap"),
     articleTable: document.getElementById("article-table"),
     topScrollbar: document.getElementById("table-scroll-top"),
-    topScrollbarInner: document.getElementById("table-scroll-top-inner")
+    topScrollbarInner: document.getElementById("table-scroll-top-inner"),
+    stickyHeader: document.getElementById("sticky-table-header"),
+    stickyHeaderInner: document.getElementById("sticky-table-header-inner"),
+    latestIssueButton: document.getElementById("latest-issue-button")
   };
 
   let articles = [];
@@ -66,6 +69,9 @@
   let exactTitle = "";
 
   let activeDrilldownKind = "";
+
+  let latestIssue = null;
+  let stickyHeaderFrame = null;
 
   function valueOrEmpty(value) {
     return value == null ? "" : String(value);
@@ -239,6 +245,303 @@
         select.value = "";
       }
     });
+  }
+
+  function configureLatestIssueButton() {
+    if (!elements.latestIssueButton) {
+      return;
+    }
+
+    const newestArticle = articles.find((article) => {
+      return (
+        valueOrEmpty(article["通号表示"]).trim() ||
+        getIssueDateText(article)
+      );
+    });
+
+    if (!newestArticle) {
+      latestIssue = null;
+      elements.latestIssueButton.disabled = true;
+      return;
+    }
+
+    latestIssue = {
+      issue: valueOrEmpty(newestArticle["通号表示"]).trim(),
+      date: getIssueDateText(newestArticle)
+    };
+
+    elements.latestIssueButton.disabled = false;
+
+    const detailParts = [];
+
+    if (latestIssue.date) {
+      detailParts.push(latestIssue.date);
+    }
+
+    if (latestIssue.issue) {
+      detailParts.push(`通巻${latestIssue.issue}号`);
+    }
+
+    elements.latestIssueButton.title =
+      detailParts.length > 0
+        ? `${detailParts.join("・")}の記事を見る`
+        : "最新号の記事を見る";
+  }
+
+  function showLatestIssue() {
+    if (!latestIssue) {
+      return;
+    }
+
+    if (latestIssue.issue) {
+      drillDown("issue", latestIssue.issue);
+      return;
+    }
+
+    if (latestIssue.date) {
+      drillDown("date", latestIssue.date);
+    }
+  }
+
+  function formatCitation(article) {
+    const authors = article.__authors.join("・");
+    const title =
+      valueOrEmpty(article["記事タイトル"]).trim();
+    const issueDate = getIssueDateText(article);
+    const issue =
+      valueOrEmpty(article["通号表示"]).trim();
+
+    let citation = "";
+
+    if (authors) {
+      citation += authors;
+    }
+
+    if (title) {
+      citation += `「${title}」`;
+    }
+
+    citation += "『経済セミナー』";
+
+    if (issueDate) {
+      citation += issueDate;
+    }
+
+    if (issue) {
+      citation += `, 通巻${issue}号`;
+    }
+
+    return citation;
+  }
+
+  function renderCitationCopyButton(article) {
+    const citation = formatCitation(article);
+
+    return `
+      <button
+        type="button"
+        class="citation-copy-button"
+        data-copy-citation="${escapeHtml(citation)}"
+        aria-label="書誌情報をコピー"
+        title="書誌情報をコピー"
+      >
+        <svg
+          class="citation-copy-icon"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <rect
+            x="8"
+            y="8"
+            width="11"
+            height="11"
+            rx="1.5"
+          ></rect>
+          <path
+            d="M16 8V5.5A1.5 1.5 0 0 0 14.5 4h-10A1.5 1.5 0 0 0 3 5.5v10A1.5 1.5 0 0 0 4.5 17H8"
+          ></path>
+        </svg>
+        <span
+          class="citation-copy-done"
+          aria-hidden="true"
+        >✓</span>
+      </button>
+    `;
+  }
+
+  async function writeClipboardText(text) {
+    if (
+      navigator.clipboard &&
+      window.isSecureContext
+    ) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+
+    const textarea = document.createElement("textarea");
+
+    textarea.value = text;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    textarea.style.pointerEvents = "none";
+
+    document.body.appendChild(textarea);
+    textarea.select();
+
+    const copied = document.execCommand("copy");
+
+    textarea.remove();
+
+    if (!copied) {
+      throw new Error("Clipboard copy failed.");
+    }
+  }
+
+  async function copyCitation(citation, button) {
+    try {
+      await writeClipboardText(citation);
+
+      button.classList.add("is-copied");
+      button.setAttribute("aria-label", "書誌情報をコピーしました");
+      button.title = "コピーしました";
+
+      window.setTimeout(() => {
+        button.classList.remove("is-copied");
+        button.setAttribute("aria-label", "書誌情報をコピー");
+        button.title = "書誌情報をコピー";
+      }, 1600);
+    } catch (error) {
+      console.error("Could not copy citation.", error);
+      button.title = "コピーできませんでした";
+    }
+  }
+
+  function buildStickyTableHeader() {
+    if (
+      !elements.stickyHeader ||
+      !elements.stickyHeaderInner ||
+      !elements.articleTable
+    ) {
+      return;
+    }
+
+    const originalHeader =
+      elements.articleTable.querySelector("thead");
+
+    if (!originalHeader) {
+      return;
+    }
+
+    const originalCells = Array.from(
+      originalHeader.querySelectorAll("th")
+    );
+
+    if (originalCells.length === 0) {
+      return;
+    }
+
+    const tableWidth = elements.articleTable.scrollWidth;
+
+    const stickyTable = document.createElement("table");
+    stickyTable.className =
+      "article-table sticky-header-table";
+    stickyTable.style.width = `${tableWidth}px`;
+    stickyTable.style.minWidth = `${tableWidth}px`;
+    stickyTable.style.tableLayout = "fixed";
+
+    const thead = document.createElement("thead");
+    const row = document.createElement("tr");
+
+    originalCells.forEach((cell) => {
+      const stickyCell = document.createElement("th");
+      const label =
+        cell.querySelector(".sortable-heading > span")
+          ?.textContent?.trim() ||
+        cell.textContent.trim();
+
+      const width = cell.getBoundingClientRect().width;
+
+      stickyCell.textContent = label;
+      stickyCell.style.width = `${width}px`;
+      stickyCell.style.minWidth = `${width}px`;
+      stickyCell.style.maxWidth = `${width}px`;
+
+      row.appendChild(stickyCell);
+    });
+
+    thead.appendChild(row);
+    stickyTable.appendChild(thead);
+
+    elements.stickyHeaderInner.replaceChildren(
+      stickyTable
+    );
+  }
+
+  function syncStickyHeaderHorizontalPosition() {
+    if (
+      !elements.stickyHeaderInner ||
+      !elements.tableWrap
+    ) {
+      return;
+    }
+
+    elements.stickyHeaderInner.style.transform =
+      `translateX(-${elements.tableWrap.scrollLeft}px)`;
+  }
+
+  function updateStickyTableHeader() {
+    stickyHeaderFrame = null;
+
+    if (
+      !elements.stickyHeader ||
+      !elements.stickyHeaderInner ||
+      !elements.tableWrap ||
+      !elements.articleTable
+    ) {
+      return;
+    }
+
+    const originalHeader =
+      elements.articleTable.querySelector("thead");
+
+    if (!originalHeader) {
+      elements.stickyHeader.hidden = true;
+      return;
+    }
+
+    const headerRect =
+      originalHeader.getBoundingClientRect();
+    const wrapRect =
+      elements.tableWrap.getBoundingClientRect();
+
+    const shouldShow =
+      headerRect.bottom <= 0 &&
+      wrapRect.bottom > 56;
+
+    if (!shouldShow) {
+      elements.stickyHeader.hidden = true;
+      return;
+    }
+
+    elements.stickyHeader.hidden = false;
+    elements.stickyHeader.style.left =
+      `${wrapRect.left}px`;
+    elements.stickyHeader.style.width =
+      `${wrapRect.width}px`;
+
+    syncStickyHeaderHorizontalPosition();
+  }
+
+  function requestStickyTableHeaderUpdate() {
+    if (stickyHeaderFrame != null) {
+      return;
+    }
+
+    stickyHeaderFrame =
+      window.requestAnimationFrame(
+        updateStickyTableHeader
+      );
   }
 
   function uniqueSorted(values, locale = "ja") {
@@ -652,9 +955,11 @@
     renderDrilldownClearButton();
     renderPagination();
 
-    window.requestAnimationFrame(
-      updateHorizontalScrollbars
-    );
+    window.requestAnimationFrame(() => {
+      updateHorizontalScrollbars();
+      buildStickyTableHeader();
+      requestStickyTableHeaderUpdate();
+    });
   }
 
   function renderTable() {
@@ -715,7 +1020,12 @@
               ${renderDrilldownButton("issue", issue, issue)}
             </td>
             <td class="cell-title">
-              ${renderDrilldownButton("title", title, title)}
+              <div class="title-cell-content">
+                <div class="title-cell-text">
+                  ${renderDrilldownButton("title", title, title)}
+                </div>
+                ${renderCitationCopyButton(article)}
+              </div>
             </td>
             <td class="cell-authors">
               ${authorLinks}
@@ -1112,6 +1422,7 @@
           elements.tableWrap,
           elements.topScrollbar
         );
+        syncStickyHeaderHorizontalPosition();
       });
 
       elements.topScrollbar.addEventListener("scroll", () => {
@@ -1121,9 +1432,16 @@
         );
       });
 
+      window.addEventListener("resize", () => {
+        updateHorizontalScrollbars();
+        buildStickyTableHeader();
+        requestStickyTableHeaderUpdate();
+      });
+
       window.addEventListener(
-        "resize",
-        updateHorizontalScrollbars
+        "scroll",
+        requestStickyTableHeaderUpdate,
+        { passive: true }
       );
 
       if ("ResizeObserver" in window && elements.articleTable) {
@@ -1133,6 +1451,13 @@
 
         tableResizeObserver.observe(elements.articleTable);
       }
+    }
+
+    if (elements.latestIssueButton) {
+      elements.latestIssueButton.addEventListener(
+        "click",
+        showLatestIssue
+      );
     }
 
     elements.keyword.addEventListener("keydown", (event) => {
@@ -1179,7 +1504,19 @@
     }
 
     elements.tableBody.addEventListener("click", (event) => {
-      const button = event.target.closest("[data-drill-kind]");
+      const copyButton =
+        event.target.closest("[data-copy-citation]");
+
+      if (copyButton) {
+        copyCitation(
+          copyButton.dataset.copyCitation,
+          copyButton
+        );
+        return;
+      }
+
+      const button =
+        event.target.closest("[data-drill-kind]");
 
       if (!button) {
         return;
@@ -1320,6 +1657,7 @@
         .sort(compareNewestFirst);
 
       populateFilters();
+      configureLatestIssueButton();
       applyUrlParameters();
       bindEvents();
 

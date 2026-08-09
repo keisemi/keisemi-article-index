@@ -57,6 +57,12 @@
   let sortKey = "";
   let sortDirection = "";
 
+  let exactIssueDate = "";
+  let exactIssueNumber = "";
+  let exactTitle = "";
+
+  let activeDrilldownKind = "";
+
   function valueOrEmpty(value) {
     return value == null ? "" : String(value);
   }
@@ -297,7 +303,214 @@
       .join("");
   }
 
+  function getIssueDateText(article) {
+    return (
+      valueOrEmpty(article["年・月号表示"]).trim() ||
+      valueOrEmpty(article["刊行年月"]).trim()
+    );
+  }
+
+  function ensureDrilldownClearButton() {
+    let button = document.getElementById("clear-drilldown");
+
+    if (button) {
+      return button;
+    }
+
+    button = document.createElement("button");
+    button.type = "button";
+    button.id = "clear-drilldown";
+    button.className = "drilldown-clear-button";
+    button.hidden = true;
+    button.textContent = "絞り込みを解除";
+
+    elements.resultsStatus.insertAdjacentElement(
+      "afterend",
+      button
+    );
+
+    return button;
+  }
+
+  function getActiveDrilldownValue() {
+    switch (activeDrilldownKind) {
+      case "date":
+        return exactIssueDate;
+
+      case "issue":
+        return exactIssueNumber;
+
+      case "title":
+        return exactTitle;
+
+      case "author":
+        return elements.author.value.trim();
+
+      case "series":
+        return elements.series.value.trim();
+
+      case "type":
+        return elements.articleType.value;
+
+      default:
+        return "";
+    }
+  }
+
+  function renderDrilldownClearButton() {
+    const button = ensureDrilldownClearButton();
+    const value = getActiveDrilldownValue();
+
+    button.hidden = !activeDrilldownKind || !value;
+  }
+
+  function resetFiltersForDrilldown() {
+    elements.keyword.value = "";
+    elements.author.value = "";
+    elements.articleType.value = "";
+    elements.series.value = "";
+
+    if (minYear != null) {
+      elements.yearFrom.value = String(minYear);
+    }
+
+    if (maxYear != null) {
+      elements.yearTo.value = String(maxYear);
+    }
+
+    exactIssueDate = "";
+    exactIssueNumber = "";
+    exactTitle = "";
+    activeDrilldownKind = "";
+
+    sortKey = "";
+    sortDirection = "";
+    syncSortControls();
+
+    currentPage = 1;
+  }
+
+  function drillDown(kind, value) {
+    const cleanedValue = valueOrEmpty(value).trim();
+
+    if (!cleanedValue || cleanedValue === "—") {
+      return;
+    }
+
+    resetFiltersForDrilldown();
+    activeDrilldownKind = kind;
+
+    switch (kind) {
+      case "date":
+        exactIssueDate = cleanedValue;
+        break;
+
+      case "issue":
+        exactIssueNumber = cleanedValue;
+        break;
+
+      case "title":
+        exactTitle = cleanedValue;
+        break;
+
+      case "author":
+        elements.author.value = cleanedValue;
+        break;
+
+      case "series":
+        elements.series.value = cleanedValue;
+        break;
+
+      case "type":
+        if (
+          Array.from(elements.articleType.options).some(
+            (option) => option.value === cleanedValue
+          )
+        ) {
+          elements.articleType.value = cleanedValue;
+        }
+        break;
+
+      default:
+        return;
+    }
+
+    runSearch();
+
+    document.querySelector(".results-section")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+  }
+
+  function renderDrilldownButton(kind, value, label = value) {
+    const cleanedValue = valueOrEmpty(value).trim();
+
+    if (!cleanedValue || cleanedValue === "—") {
+      return escapeHtml(label || "—");
+    }
+
+    return `
+      <button
+        type="button"
+        class="result-link"
+        data-drill-kind="${escapeHtml(kind)}"
+        data-drill-value="${escapeHtml(cleanedValue)}"
+        title="この項目で記事を表示"
+      >
+        ${escapeHtml(label)}
+      </button>
+    `;
+  }
+
+  function getActiveDrilldownLabel() {
+    const value = getActiveDrilldownValue();
+
+    if (!value) {
+      return "";
+    }
+
+    const labels = {
+      date: "年月号",
+      issue: "通巻番号",
+      title: "記事タイトル",
+      author: "著者名",
+      series: "特集・連載等タイトル",
+      type: "種別"
+    };
+
+    const label = labels[activeDrilldownKind];
+
+    return label
+      ? `${label}：${value}`
+      : "";
+  }
+
   function articleMatches(article) {
+    if (
+      exactIssueDate &&
+      normalizeText(getIssueDateText(article)) !==
+        normalizeText(exactIssueDate)
+    ) {
+      return false;
+    }
+
+    if (
+      exactIssueNumber &&
+      normalizeText(article["通号表示"]) !==
+        normalizeText(exactIssueNumber)
+    ) {
+      return false;
+    }
+
+    if (
+      exactTitle &&
+      normalizeText(article["記事タイトル"]) !==
+        normalizeText(exactTitle)
+    ) {
+      return false;
+    }
+
     const keywordTerms = splitTerms(elements.keyword.value);
     const authorTerms = splitTerms(elements.author.value);
     const seriesTerms = splitTerms(elements.series.value);
@@ -396,6 +609,7 @@
 
     renderTable();
     renderStatus();
+    renderDrilldownClearButton();
     renderPagination();
   }
 
@@ -438,14 +652,39 @@
         const pages =
           valueOrEmpty(article["掲載頁"]).trim() || "—";
 
+        const authorLinks =
+          article.__authors.length > 0
+            ? article.__authors
+                .map((author) =>
+                  renderDrilldownButton(
+                    "author",
+                    author,
+                    author
+                  )
+                )
+                .join('<span class="result-link-separator">／</span>')
+            : "—";
+
         return `
           <tr>
-            <td class="cell-date">${escapeHtml(issueDate)}</td>
-            <td class="cell-issue">${escapeHtml(issue)}</td>
-            <td class="cell-title">${escapeHtml(title)}</td>
-            <td class="cell-authors">${escapeHtml(authors)}</td>
-            <td class="cell-series">${escapeHtml(series)}</td>
-            <td class="cell-type">${escapeHtml(type)}</td>
+            <td class="cell-date">
+              ${renderDrilldownButton("date", issueDate, issueDate)}
+            </td>
+            <td class="cell-issue">
+              ${renderDrilldownButton("issue", issue, issue)}
+            </td>
+            <td class="cell-title">
+              ${renderDrilldownButton("title", title, title)}
+            </td>
+            <td class="cell-authors">
+              ${authorLinks}
+            </td>
+            <td class="cell-series">
+              ${renderDrilldownButton("series", series, series)}
+            </td>
+            <td class="cell-type">
+              ${renderDrilldownButton("type", type, type)}
+            </td>
             <td class="cell-pages">${escapeHtml(pages)}</td>
           </tr>
         `;
@@ -465,9 +704,12 @@
       filteredArticles.length
     );
 
+    const drilldownLabel = getActiveDrilldownLabel();
+
     elements.resultsStatus.textContent =
       `${filteredArticles.length.toLocaleString("ja-JP")}件中 ` +
-      `${start.toLocaleString("ja-JP")}–${end.toLocaleString("ja-JP")}件を表示`;
+      `${start.toLocaleString("ja-JP")}–${end.toLocaleString("ja-JP")}件を表示` +
+      (drilldownLabel ? ` ／ 絞り込み：${drilldownLabel}` : "");
   }
 
   function renderPagination() {
@@ -592,6 +834,11 @@
     elements.articleType.value = "";
     elements.series.value = "";
 
+    exactIssueDate = "";
+    exactIssueNumber = "";
+    exactTitle = "";
+    activeDrilldownKind = "";
+
     if (minYear != null) {
       elements.yearFrom.value = String(minYear);
     }
@@ -642,6 +889,22 @@
       params.set("series", series);
     }
 
+    if (exactIssueDate) {
+      params.set("issueDate", exactIssueDate);
+    }
+
+    if (exactIssueNumber) {
+      params.set("issue", exactIssueNumber);
+    }
+
+    if (exactTitle) {
+      params.set("title", exactTitle);
+    }
+
+    if (activeDrilldownKind) {
+      params.set("drill", activeDrilldownKind);
+    }
+
     if (sortKey && sortDirection) {
       params.set("sort", sortKey);
       params.set("dir", sortDirection);
@@ -666,6 +929,24 @@
     elements.keyword.value = params.get("q") || "";
     elements.author.value = params.get("author") || "";
     elements.series.value = params.get("series") || "";
+
+    exactIssueDate = params.get("issueDate") || "";
+    exactIssueNumber = params.get("issue") || "";
+    exactTitle = params.get("title") || "";
+
+    const requestedDrill = params.get("drill") || "";
+    const allowedDrillKinds = new Set([
+      "date",
+      "issue",
+      "title",
+      "author",
+      "series",
+      "type"
+    ]);
+
+    activeDrilldownKind = allowedDrillKinds.has(requestedDrill)
+      ? requestedDrill
+      : "";
 
     const requestedType = params.get("type");
 
@@ -828,6 +1109,32 @@
         downloadFilteredCsv
       );
     }
+
+    elements.tableBody.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-drill-kind]");
+
+      if (!button) {
+        return;
+      }
+
+      drillDown(
+        button.dataset.drillKind,
+        button.dataset.drillValue
+      );
+    });
+
+    ensureDrilldownClearButton().addEventListener(
+      "click",
+      () => {
+        resetFiltersForDrilldown();
+        runSearch();
+
+        document.querySelector(".results-section")?.scrollIntoView({
+          behavior: "smooth",
+          block: "start"
+        });
+      }
+    );
 
     elements.sortSelects.forEach((select) => {
       select.addEventListener("change", () => {

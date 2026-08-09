@@ -1434,3 +1434,88 @@ select {
     font-size: 0.68rem;
   }
 }
+
+
+/* ==================================================
+   Clickable result fields
+================================================== */
+
+.result-link {
+  display: inline;
+
+  margin: 0;
+  padding: 0;
+
+  border: 0;
+  border-bottom: 1px solid transparent;
+
+  background: transparent;
+  color: inherit;
+
+  font: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  text-align: left;
+
+  cursor: pointer;
+
+  transition:
+    color 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.result-link:hover {
+  border-bottom-color: var(--teal);
+  color: var(--teal-dark);
+}
+
+.result-link:focus-visible {
+  border-radius: 2px;
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+
+.cell-title .result-link {
+  font-weight: 500;
+}
+
+.result-link-separator {
+  color: var(--gray-500);
+}
+
+
+/* ==================================================
+   Drill-down clear control
+================================================== */
+
+.drilldown-clear-button {
+  flex: 0 0 auto;
+
+  padding: 7px 14px;
+
+  border: 1px solid var(--teal);
+  border-radius: 999px;
+
+  background: var(--white);
+  color: var(--teal-dark);
+
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.2;
+
+  cursor: pointer;
+
+  transition:
+    background 0.12s ease,
+    color 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.drilldown-clear-button:hover {
+  background: var(--teal);
+  color: var(--white);
+}
+
+.drilldown-clear-button[hidden] {
+  display: none;
+}

@@ -46,7 +46,11 @@
     resultCount: document.querySelector(".result-count strong"),
     resultsStatus: document.getElementById("results-status"),
     pagination: document.getElementById("pagination"),
-    sortSelects: Array.from(document.querySelectorAll(".sort-select"))
+    sortSelects: Array.from(document.querySelectorAll(".sort-select")),
+    tableWrap: document.getElementById("article-table-wrap"),
+    articleTable: document.getElementById("article-table"),
+    topScrollbar: document.getElementById("table-scroll-top"),
+    topScrollbarInner: document.getElementById("table-scroll-top-inner")
   };
 
   let articles = [];
@@ -158,11 +162,6 @@
 
       case "type":
         return valueOrEmpty(article["記事種別"]).trim();
-
-      case "pages": {
-        const match = valueOrEmpty(article["掲載頁"]).match(/\d+/);
-        return match ? Number(match[0]) : null;
-      }
 
       default:
         return null;
@@ -598,6 +597,47 @@
     return filteredArticles.slice(start, start + PAGE_SIZE);
   }
 
+  let isSyncingHorizontalScroll = false;
+
+  function updateHorizontalScrollbars() {
+    if (
+      !elements.tableWrap ||
+      !elements.articleTable ||
+      !elements.topScrollbar ||
+      !elements.topScrollbarInner
+    ) {
+      return;
+    }
+
+    const tableWidth = elements.articleTable.scrollWidth;
+    const viewportWidth = elements.tableWrap.clientWidth;
+    const hasHorizontalOverflow = tableWidth > viewportWidth + 1;
+
+    elements.topScrollbarInner.style.width = `${tableWidth}px`;
+    elements.topScrollbar.hidden = !hasHorizontalOverflow;
+
+    if (!hasHorizontalOverflow) {
+      elements.tableWrap.scrollLeft = 0;
+      elements.topScrollbar.scrollLeft = 0;
+      return;
+    }
+
+    elements.topScrollbar.scrollLeft = elements.tableWrap.scrollLeft;
+  }
+
+  function syncHorizontalScroll(source, target) {
+    if (isSyncingHorizontalScroll || !source || !target) {
+      return;
+    }
+
+    isSyncingHorizontalScroll = true;
+    target.scrollLeft = source.scrollLeft;
+
+    window.requestAnimationFrame(() => {
+      isSyncingHorizontalScroll = false;
+    });
+  }
+
   function render() {
     elements.resultCount.textContent =
       filteredArticles.length.toLocaleString("ja-JP");
@@ -611,13 +651,17 @@
     renderStatus();
     renderDrilldownClearButton();
     renderPagination();
+
+    window.requestAnimationFrame(
+      updateHorizontalScrollbars
+    );
   }
 
   function renderTable() {
     if (filteredArticles.length === 0) {
       elements.tableBody.innerHTML = `
         <tr class="empty-row">
-          <td colspan="7">
+          <td colspan="6">
             条件に一致する記事はありません。
           </td>
         </tr>
@@ -648,9 +692,6 @@
 
         const type =
           valueOrEmpty(article["記事種別"]).trim() || "—";
-
-        const pages =
-          valueOrEmpty(article["掲載頁"]).trim() || "—";
 
         const authorLinks =
           article.__authors.length > 0
@@ -685,7 +726,6 @@
             <td class="cell-type">
               ${renderDrilldownButton("type", type, type)}
             </td>
-            <td class="cell-pages">${escapeHtml(pages)}</td>
           </tr>
         `;
       })
@@ -987,8 +1027,7 @@
       "title",
       "authors",
       "series",
-      "type",
-      "pages"
+      "type"
     ]);
 
     if (
@@ -1066,6 +1105,35 @@
     elements.searchButton.addEventListener("click", () =>
       runSearch()
     );
+
+    if (elements.tableWrap && elements.topScrollbar) {
+      elements.tableWrap.addEventListener("scroll", () => {
+        syncHorizontalScroll(
+          elements.tableWrap,
+          elements.topScrollbar
+        );
+      });
+
+      elements.topScrollbar.addEventListener("scroll", () => {
+        syncHorizontalScroll(
+          elements.topScrollbar,
+          elements.tableWrap
+        );
+      });
+
+      window.addEventListener(
+        "resize",
+        updateHorizontalScrollbars
+      );
+
+      if ("ResizeObserver" in window && elements.articleTable) {
+        const tableResizeObserver = new ResizeObserver(
+          updateHorizontalScrollbars
+        );
+
+        tableResizeObserver.observe(elements.articleTable);
+      }
+    }
 
     elements.keyword.addEventListener("keydown", (event) => {
       if (event.key === "Enter") {
@@ -1209,7 +1277,7 @@
 
     elements.tableBody.innerHTML = `
       <tr class="error-row">
-        <td colspan="7">
+        <td colspan="6">
           記事データを読み込めませんでした。
           ページを再読み込みしても解決しない場合は、
           データ生成処理を確認してください。

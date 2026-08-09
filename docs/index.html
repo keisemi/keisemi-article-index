@@ -13,30 +13,30 @@
 
   <meta property="og:type" content="website">
 
-<meta
-  property="og:title"
-  content="『経済セミナー』全記事データベース"
->
+  <meta
+    property="og:title"
+    content="『経済セミナー』全記事データベース"
+  >
 
-<meta
-  property="og:description"
-  content="『経済セミナー』創刊号以降の記事を検索・閲覧できる全記事目録です。"
->
+  <meta
+    property="og:description"
+    content="『経済セミナー』創刊号以降の記事を検索・閲覧できる全記事目録です。"
+  >
 
-<meta
-  property="og:url"
-  content="https://keisemi.github.io/keisemi-article-index/"
->
+  <meta
+    property="og:url"
+    content="https://keisemi.github.io/keisemi-article-index/"
+  >
 
-<meta
-  property="og:image"
-  content="https://keisemi.github.io/keisemi-article-index/assets/ogp.png"
->
+  <meta
+    property="og:image"
+    content="https://keisemi.github.io/keisemi-article-index/assets/ogp.png"
+  >
 
-<meta
-  name="twitter:image"
-  content="https://keisemi.github.io/keisemi-article-index/assets/ogp.png"
->
+  <meta
+    name="twitter:image"
+    content="https://keisemi.github.io/keisemi-article-index/assets/ogp.png"
+  >
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -309,9 +309,21 @@
         </div>
 
 
-        <div class="table-wrap">
+        <div
+          class="table-scroll-top"
+          id="table-scroll-top"
+          aria-label="記事一覧の横スクロール"
+        >
+          <div
+            class="table-scroll-top-inner"
+            id="table-scroll-top-inner"
+            aria-hidden="true"
+          ></div>
+        </div>
 
-          <table class="article-table">
+        <div class="table-wrap" id="article-table-wrap">
+
+          <table class="article-table" id="article-table">
 
             <thead>
               <tr>
@@ -380,23 +392,12 @@
                     </select>
                   </div>
                 </th>
-
-                <th>
-                  <div class="sortable-heading">
-                    <span>頁</span>
-                    <select class="sort-select" data-sort-key="pages" aria-label="頁の並び順">
-                      <option value="">↕</option>
-                      <option value="asc">↑ 昇順</option>
-                      <option value="desc">↓ 降順</option>
-                    </select>
-                  </div>
-                </th>
               </tr>
             </thead>
 
             <tbody id="article-table-body">
               <tr class="placeholder-row">
-                <td colspan="7">
+                <td colspan="6">
                   記事データを読み込んでいます。
                 </td>
               </tr>

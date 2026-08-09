@@ -59,11 +59,45 @@ if (!copied) {
   stop("Failed to copy Excel file to: ", xlsx_file)
 }
 
-# Record the date of the commit being deployed.
-# GitHub Actions provides GITHUB_SHA. We read its Unix timestamp from git
-# and convert it to Japan Standard Time. If run outside GitHub Actions,
-# fall back to the current date in Japan.
+# Record the commit being deployed.
+# GITHUB_SHA changes on every push. Use it both for the displayed
+# update date and for cache-busting static assets in the Pages artifact.
 github_sha <- Sys.getenv("GITHUB_SHA")
+
+build_version <- if (nzchar(github_sha)) {
+  substr(github_sha, 1, 12)
+} else {
+  format(
+    Sys.time(),
+    tz = "Asia/Tokyo",
+    format = "%Y%m%d%H%M%S"
+  )
+}
+
+index_file <- "docs/index.html"
+
+if (!file.exists(index_file)) {
+  stop("Index HTML file not found: ", index_file)
+}
+
+index_html <- readLines(
+  index_file,
+  warn = FALSE,
+  encoding = "UTF-8"
+)
+
+index_html <- gsub(
+  "__BUILD_VERSION__",
+  build_version,
+  index_html,
+  fixed = TRUE
+)
+
+writeLines(
+  index_html,
+  index_file,
+  useBytes = TRUE
+)
 
 updated_date <- tryCatch(
   {
@@ -114,5 +148,6 @@ cat(" - ", csv_file, "\n", sep = "")
 cat(" - ", json_file, "\n", sep = "")
 cat(" - ", xlsx_file, "\n", sep = "")
 cat(" - ", updated_file, "\n", sep = "")
+cat("Build version: ", build_version, "\n", sep = "")
 cat("Rows: ", nrow(data), "\n", sep = "")
 cat("Columns: ", ncol(data), "\n", sep = "")

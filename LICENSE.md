@@ -33,3 +33,6 @@ A recommended citation will be provided in the README.
 These licenses apply only to materials for which the provider of this repository holds the relevant rights. They do not grant any rights in third-party copyrighted materials, including the contents of articles published in *Keizai Seminar*.
 
 これらのライセンスは、本リポジトリの提供者が権利を有するデータおよびコードにのみ適用されます。『経済セミナー』に掲載された各記事の本文その他、第三者が著作権等を有するコンテンツの利用を許諾するものではありません。
+
+なお、本ホームページとそのGitHubリポジトリの内容、およびデータ等の資料は、情報提供のみを目的としています。運用に際しては十分にご確認をいただき、お客様ご自身の責任とご判断に基づいて行ってください。これらの情報を運用した結果により損害等が生じた場合でも、日本評論社および経済セミナー編集部は、いかなる責任も負うことはできませんので、ご留意ください。
+

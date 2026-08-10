@@ -53,7 +53,10 @@
     topScrollbarInner: document.getElementById("table-scroll-top-inner"),
     stickyHeader: document.getElementById("sticky-table-header"),
     stickyHeaderInner: document.getElementById("sticky-table-header-inner"),
-    latestIssueButton: document.getElementById("latest-issue-button")
+    latestIssueButton: document.getElementById("latest-issue-button"),
+    issuePurchaseCard: document.getElementById("issue-purchase-card"),
+    issuePurchaseTitle: document.getElementById("issue-purchase-title"),
+    issuePurchaseLink: document.getElementById("issue-purchase-link")
   };
 
   let articles = [];
@@ -301,6 +304,71 @@
     if (latestIssue.date) {
       drillDown("date", latestIssue.date);
     }
+  }
+
+  function getMagazineBacknumberUrl(article) {
+    const year = article?.__year;
+
+    if (!Number.isFinite(year)) {
+      return "https://www.nippyo.co.jp/";
+    }
+
+    if (year >= 2020) {
+      return "https://www.nippyo.co.jp/shop/magazines/backnumber/3.html";
+    }
+
+    if (year >= 2010) {
+      return "https://www.nippyo.co.jp/shop/magazines/backnumber/2010/3.html";
+    }
+
+    if (year >= 2000) {
+      return "https://www.nippyo.co.jp/shop/magazines/backnumber/2000/3.html";
+    }
+
+    if (year >= 1990) {
+      return "https://www.nippyo.co.jp/shop/magazines/backnumber/1990/3.html";
+    }
+
+    return "https://www.nippyo.co.jp/";
+  }
+
+  function renderIssuePurchaseCard() {
+    if (
+      !elements.issuePurchaseCard ||
+      !elements.issuePurchaseTitle ||
+      !elements.issuePurchaseLink
+    ) {
+      return;
+    }
+
+    const isIssueDrilldown =
+      activeDrilldownKind === "date" ||
+      activeDrilldownKind === "issue";
+
+    if (!isIssueDrilldown || filteredArticles.length === 0) {
+      elements.issuePurchaseCard.hidden = true;
+      return;
+    }
+
+    const article = filteredArticles[0];
+    const issueDate = getIssueDateText(article);
+    const issue = valueOrEmpty(article["通号表示"]).trim();
+
+    const parts = [];
+
+    if (issueDate) {
+      parts.push(`『経済セミナー』${issueDate}`);
+    } else {
+      parts.push("『経済セミナー』");
+    }
+
+    if (issue) {
+      parts.push(`通巻${issue}号`);
+    }
+
+    elements.issuePurchaseTitle.textContent = parts.join("　");
+    elements.issuePurchaseLink.href = getMagazineBacknumberUrl(article);
+    elements.issuePurchaseCard.hidden = false;
   }
 
   function formatCitation(article) {
@@ -953,6 +1021,7 @@
     renderTable();
     renderStatus();
     renderDrilldownClearButton();
+    renderIssuePurchaseCard();
     renderPagination();
 
     window.requestAnimationFrame(() => {

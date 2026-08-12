@@ -18,32 +18,49 @@
 
 ## push後に自動で行われる処理
 
-`data/keisemi-article-index.xlsx` が更新されると、GitHub Actionsが
-`scripts/build_data.R` を実行し、以下のファイルを自動生成・更新します。
+`data/keisemi-article-index.xlsx` が更新されると、GitHub Actionsが  
+`scripts/build_data.R` を実行します。
 
-- `docs/data/articles.csv`
-- `docs/data/articles.json`
-- `docs/data/keisemi-article-index.xlsx`
-- `docs/data/last-updated.txt`
+Actionsの実行中に、正本Excelから次のWeb公開用ファイルが `docs/data` に生成されます。
 
-その後、`docs` フォルダの内容がGitHub Pagesへ再デプロイされ、
-全記事データベースのWebサイトも更新されます。
+- `articles.csv`
+- `articles.json`
+- `keisemi-article-index.xlsx`
+- `last-updated.txt`
+
+これらは **GitHub Pagesへデプロイするためのビルド成果物**です。
+
+Actionsの実行環境内で生成され、GitHub Pagesへ公開されますが、  
+生成されたファイルを `main` ブランチへ自動的にcommit・pushする処理は行っていません。
+
+そのため、GitHub上で `main` ブランチの `docs/data` フォルダを見た場合、  
+その内容が現在のGitHub Pages上の公開物と完全には一致しないことがあります。
+
+Webサイトで実際に使われるCSV・JSON・公開用Excel・更新日ファイルは、  
+**最新の成功したGitHub Actions実行時に生成されたもの**です。
+
+また、ビルド時には `docs/index.html` 内の `__BUILD_VERSION__` が、  
+そのpushのコミットSHAをもとにした値へ置換され、静的ファイルのキャッシュ更新にも利用されます。
 
 ## 重要
 
 - **記事データの正本は `data/keisemi-article-index.xlsx` だけです。**
-- `articles.csv` や `articles.json` を手作業で編集する必要はありません。
-- `docs/data/keisemi-article-index.xlsx` も手作業では更新しません。
-- CSV・JSON・Web公開用Excelは、GitHub Actions実行時に正本Excelから自動生成されます。
-- ファイル名 `keisemi-article-index.xlsx` は変更しないでください。
-- Excelの列構成を変更する場合は、Webサイト側や `scripts/build_data.R` の修正が必要になる可能性があります。
+- 新号追加や記事データ修正の際は、この正本Excelだけを編集します。
+- `articles.csv` や `articles.json` を手作業で更新する必要はありません。
+- Pages公開用の `keisemi-article-index.xlsx` や `last-updated.txt` も手作業では作成しません。
+- `main` ブランチ内の `docs/data` にある生成物を正本として扱わないでください。
+- 正本Excelのファイル名 `keisemi-article-index.xlsx` は変更しないでください。
+- Excelの列構成を変更する場合は、`scripts/build_data.R` やWebサイト側の修正が必要になる可能性があります。
 
-## 反映されない場合
+## 更新できたか確認する方法
 
-まずGitHubの **Actions** タブを開き、
+まずGitHubの **Actions** タブを開き、  
 `Build article data and deploy site` の最新実行結果を確認してください。
 
 - 緑色（Success）: ビルド・デプロイ成功
 - 赤色（Failure）: エラー内容を確認して修正が必要
+
+Successになったら、GitHub PagesのWebサイトを開き、  
+追加・修正した記事が検索結果などに反映されていることを確認してください。
 
 Actionsが成功していても、GitHub Pagesへの反映には少し時間がかかる場合があります。
